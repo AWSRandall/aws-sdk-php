@@ -1,5 +1,25 @@
 # CHANGELOG
 
+## 3.11.6 - 2015-12-15
+
+* `Aws\Ec2` - Added support for specifying encryption on CopyImage commands.
+
+## 3.11.5 - 2015-12-08
+
+* `Aws\AutoScaling` - Added support for setting and describing instance
+  protection status.
+* `Aws\Emr` - Added support for using release labels instead of version numbers.
+* `Aws\Rds` - Added support for Aurora encryption at rest.
+
+## 3.11.4 - 2015-12-03
+
+* `Aws\DirectoryService` - Added support for launching a fully managed Microsoft
+  Active Directory.
+* `Aws\Rds` - Added support for specifying a port number when modifying database
+  instances.
+* `Aws\Route53` - Added support for Traffic Flow, a traffic management service.
+* `Aws\Ses` - Added support for generating SMTP passwords from credentials.
+
 ## 3.11.3 - 2015-12-01
 
 * `Aws\Config` - Update documentation.

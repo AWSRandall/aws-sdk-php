@@ -13,6 +13,7 @@ use GuzzleHttp\Promise\RejectedPromise;
 use GuzzleHttp\Psr7;
 use GuzzleHttp\Psr7\FnStream;
 use GuzzleHttp\Psr7\Response;
+use Psr\Http\Message\RequestInterface;
 use Psr\Http\Message\StreamInterface;
 
 /**
@@ -479,6 +480,26 @@ class S3ClientTest extends \PHPUnit_Framework_TestCase
         $this->assertEquals('sink=baz', (string) $result['Body']);
     }
 
+    public function testRequestSucceedsWithColon()
+    {
+        $key = 'aaa:bbb';
+        $s3 = $this->getTestClient('S3', [
+            'http_handler' => function (RequestInterface $request) use ($key) {
+                $this->assertContains(
+                    urlencode($key),
+                    (string) $request->getUri()
+                );
+
+                return Promise\promise_for(new Psr7\Response);
+            }
+        ]);
+
+        $s3->getObject([
+            'Bucket' => 'bucket',
+            'Key'    => $key,
+        ]);
+    }
+
     public function testRetriesConnectionErrors()
     {
         $retries = 11;
@@ -730,6 +751,39 @@ EOXML;
             'Bucket' => 'bucket',
             'Key' => 'key',
             'UploadId' => 1,
+        ]);
+
+        $this->assertEquals(0, $retries);
+    }
+
+    public function testErrorsWithUnparseableBodiesCanBeRetried()
+    {
+        $networkingError = $this->getMockBuilder(RequestException::class)
+            ->disableOriginalConstructor()
+            ->setMethods([])
+            ->getMock();
+
+        $retries = 11;
+        $client = new S3Client([
+            'version' => 'latest',
+            'region' => 'us-west-2',
+            'retries' => $retries,
+            'http_handler' => function () use (&$retries, $networkingError) {
+                if (0 === --$retries) {
+                    return new FulfilledPromise(new Response);
+                }
+
+                return new RejectedPromise([
+                    'connection_error' => false,
+                    'exception' => $networkingError,
+                    'response' => new Response(200, [], openssl_random_pseudo_bytes(2048)),
+                ]);
+            },
+        ]);
+
+        $client->getObject([
+            'Bucket' => 'bucket',
+            'Key' => 'key',
         ]);
 
         $this->assertEquals(0, $retries);
